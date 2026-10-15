@@ -39,3 +39,31 @@ We prefer all communications to be in English.
 Microsoft follows the principle of [Coordinated Vulnerability Disclosure](https://aka.ms/security.md/cvd).
 
 <!-- END MICROSOFT SECURITY.MD BLOCK -->
+
+## Internal CI runner configuration (administrator action required)
+
+Repository workflow conditions are defense in depth, not a security boundary:
+a pull request can change its workflow YAML. Before internal runners are enabled,
+an organization administrator must restrict every runner group used by Skala to
+selected workflows at these exact trusted refs:
+
+- `microsoft/skala/.github/workflows/model-benchmark.yml@refs/heads/main`
+- `microsoft/skala/.github/workflows/skala-test.yml@refs/heads/main`
+
+Apply these restrictions to all three pools: `microsoft-skala-cpu-pool`,
+`microsoft-skala-small-gpu-pool`, and `microsoft-skala-gpu-pool`. Restrict repository
+access to the intended repository as well. Do not authorize PR merge refs,
+wildcard refs, or other workflows that execute PR-controlled code. Protect `main`
+with required review and restrict who can dispatch workflows on it.
+
+The workflows run internal benchmarks and GPU tests only on trusted `main`
+pushes or manual dispatches; PR CPU tests remain on GitHub-hosted runners.
+Never use `pull_request_target` to check out or execute PR contents on these pools.
+
+If the runner service cannot enforce selected workflows and refs, disable its
+access to this public repository until equivalent isolation is available.
+PR approval settings alone are not a replacement for runner isolation.
+Validate the policy with a fork PR that attempts to remove job conditions and
+target an internal pool: it must be denied runner access, not merely skipped by
+the original YAML. Code changes alone do not establish that this configuration
+has been deployed.
